@@ -6,6 +6,12 @@ from sqlalchemy.orm import Session
 import redis
 
 from app.database import db
+from app.core.cache import redis_client
+from app.api.public.flags import router as flags_router
+from app.api.public.configs import router as configs_router
+from app.api.admin.features import router as admin_features_router
+from app.api.admin.configs import router as admin_configs_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -13,7 +19,6 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(lifespan=lifespan)
-r = redis.Redis(host='redis', port=6379, db=0)
 
 @app.get("/health")
 async def health():
@@ -22,7 +27,7 @@ async def health():
 @app.get("/health/redis")
 async def health_redis():
     try:
-        r.ping()
+        redis_client.ping()
         return {"Redis": "Healthy"}
     except redis.exceptions.ConnectionError:
         raise HTTPException(status_code=500, detail={
@@ -42,6 +47,10 @@ def health_postgres(db: Session = Depends(db.get_db)):
             "Error": OperationalError.__name__
         })
 
+app.include_router(flags_router)
+app.include_router(configs_router)
+app.include_router(admin_features_router)
+app.include_router(admin_configs_router)
 
 if __name__ == "__main__":
     import uvicorn

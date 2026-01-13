@@ -6,10 +6,10 @@ from app.database.base import Base
 
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
-LocalSession = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
 def get_db():
-    db = LocalSession()
+    db = SessionLocal()
     try:
         yield db
     finally:
